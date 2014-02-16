@@ -7,6 +7,7 @@ require_once __DIR__ . '/../lib/TestDriver.php';
 TestDriver::configure(__DIR__ . '/../../oxideshop_ce/source');
 
 
+
 class TestDriverTest extends PHPUnit_Framework_TestCase {
 
     public function testGetDetailsPage() {
@@ -29,6 +30,21 @@ class TestDriverTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(
             'OXID Surf- und Kiteshop | Transportcontainer THE BARREL | online kaufen',
             trim($result->titleTag));
+    }
+
+    public function testResetState() {
+        $this->assertFalse(isset($_GET['cl']));
+        $driver = new TestDriver;
+        $result = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
+        $this->assertFalse(isset($_GET['cl']));
+    }
+
+    public function testLogin() {
+        $driver = new TestDriver;
+        $result = $driver->post('fnc=login_noredirect&cl=account&lgn_usr=admin&lgn_pwd=admin');
+        $this->assertEquals('account', $result->controller->getClassName());
+        $this->assertNotEmpty($result->sessionId, 'Session ID is empty!');
+        $this->assertEquals('oxdefaultadmin', $result->user->getId());
     }
 
 }

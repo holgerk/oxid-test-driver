@@ -26,15 +26,33 @@ class TestDriver {
     }
 
     public static function autoload($class) {
-        if (strtolower($class) == 'oxutilsobject') {
-            eval('?>' . str_replace(
-                'class oxUtilsObject',
-                'class oxUtilsObject_Original',
-                file_get_contents(self::$shopDirectory . '/core/oxutilsobject.php')));
-            require_once __DIR__ . '/replacements/oxutilsobject.php';
+        $class = strtolower($class);
 
+        $replacements = array(
+            'oxutilsobject' => array(
+                'search'  => 'class oxUtilsObject',
+                'replace' => 'class oxUtilsObject_Original'),
+            'oxregistry'    => array(
+                'search'  => 'class oxRegistry',
+                'replace' => 'class oxRegistry_Original'),
+            'oxsupercfg'    => array(
+                'search'  => 'class oxSuperCfg',
+                'replace' => 'class oxSuperCfg_Original'),
+        );
+
+        if (isset($replacements[$class])) {
+            // maybe we should write the replacments to a temporary file for better stacktraces
+            eval('?>' . str_replace(
+                $replacements[$class]['search'],
+                $replacements[$class]['replace'],
+                file_get_contents(self::$shopDirectory . "/core/$class.php")));
+            require_once __DIR__ . "/replacements/$class.php";
+        }
+
+        if ($class == 'oxutilsobject') {
             self::configureOverloads();
         }
+
         self::$loadedClasses []= $class;
     }
 
@@ -56,6 +74,7 @@ class TestDriver {
     // ========================================================================
 
     private $output = '';
+    private $cookies = array();
 
     public function __construct() {
         if (!self::$configured) {
@@ -68,18 +87,33 @@ class TestDriver {
     }
 
     public function get($params) {
-        $this->reset();
+        return $this->request('GET', $params);
+    }
+
+    public function post($params) {
+        return $this->request('POST', $params);
+    }
+
+    public function request($method, $params) {
+
+        $method = strtoupper($method);
+
         if (is_string($params)) {
             parse_str($params, $result);
-            $_GET = $result;
+            $GLOBALS["_$method"] = $result;
         } else {
-            $_GET = $params;
+            $GLOBALS["_$method"] = $params;
         }
         $this->populateRequestVars();
 
-        Oxid::run();
+        $_SERVER['REQUEST_METHOD'] = $method;
 
-        return $this->createResponse();
+        Oxid::run();
+        $response = $this->createResponse();
+        $this->reset();
+
+
+        return $response;
     }
 
     public function getTitleTag() {
@@ -96,17 +130,31 @@ class TestDriver {
     private function createResponse() {
         $response = new StdClass;
         $response->controller = oxRegistry::getConfig()->getActiveView();
-        $response->titleTag = $this->getTitleTag();
-        $response->html = $this->output;
+        $response->user       = $response->controller->getUser();
+        $response->titleTag   = $this->getTitleTag();
+        $response->html       = $this->output;
+        $response->sessionId  = (isset($this->cookies['sid'])) ? $this->cookies['sid'] : null;
         return $response;
     }
 
     private function reset() {
+        $_GET = array();
         $this->output = '';
+        $this->cookies = array();
+
+        oxUtilsObject::getInstance()->unitTestReset();
+        oxSuperCfg::unitTestReset();
+
+        oxRegistry::unitTestReset();
+        $oConfigFile = new oxConfigFile(self::$shopDirectory . "/config.inc.php");
+        oxRegistry::set("oxConfigFile", $oConfigFile);
     }
 
     private function populateRequestVars() {
         foreach ($_GET as $k => $v) {
+            $_REQUEST[$k] = $v;
+        }
+        foreach ($_POST as $k => $v) {
             $_REQUEST[$k] = $v;
         }
     }
@@ -114,23 +162,30 @@ class TestDriver {
 
     // ========================================================================
 
-    // for oxoutput overload
+    // called from oxoutput overload
     public function registerOutput($name, $data) {
         $this->output .= $data;
     }
 
-    // for oxutils overload
+    // called from oxutils overload
     public function registerHeader($header) {
     }
 
-    // for oxutils overload
+    // called from oxutils overload
     public function registerRedirect($url, $code) {
         throw new Exception("Got unexpected redirect: $code $url");
         // var_dump(func_get_args());
     }
 
-    // for oxutils overload
+    // called from oxutils overload
     public function registerShowMessageAndExit($message) {
+    }
+
+    // called from oxutilsserver overload
+    public function registerSetOxCookie($args) {
+        list($name, $value) = $args;
+        $this->cookies[$name] = $value;
+        // debug('cookie: ' . $args[0] . ' = ' . $args[1]);
     }
 
 

@@ -7,15 +7,12 @@ class oxUtilsObject extends oxUtilsObject_Original {
     protected static $unitTestOverloads;
 
     // new
-    public function unitTestResetState() {
+    public function unitTestReset() {
         $this->_aClassNameCache = array();
         self::$_aLoadedArticles = array();
         self::$_aInstanceCache = array();
         self::$_aModuleVars = array();
         self::$_aClassInstances = array();
-
-        self::$unitTestInstance = null;
-        self::$unitTestOverloads = array();
     }
 
     // new
@@ -36,8 +33,11 @@ class oxUtilsObject extends oxUtilsObject_Original {
     public function getClassName($class) {
         $result = parent::getClassName($class);
         if (in_array($class, self::$unitTestOverloads)) {
-            class_alias($class, 'TestDriver' . $class . '_parent');
-            require_once __DIR__ . '/../overloads/' . $class . '.php';
+            $parentClass = 'TestDriver' . $class . '_parent';
+            if (!class_exists($parentClass, false)) {
+                class_alias($class, $parentClass);
+                require_once __DIR__ . '/../overloads/' . $class . '.php';
+            }
             return "TestDriver$class";
         }
         return $result;
