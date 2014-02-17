@@ -33,12 +33,12 @@ class oxUtilsObject extends oxUtilsObject_Original {
     public function getClassName($class) {
         $result = parent::getClassName($class);
         if (in_array($class, self::$unitTestOverloads)) {
-            $parentClass = 'TestDriver' . $class . '_parent';
+            $parentClass = 'OxidTestDriver' . $class . '_parent';
             if (!class_exists($parentClass, false)) {
                 class_alias($class, $parentClass);
                 require_once __DIR__ . '/../overloads/' . $class . '.php';
             }
-            return "TestDriver$class";
+            return "OxidTestDriver$class";
         }
         return $result;
     }

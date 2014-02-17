@@ -1,6 +1,6 @@
 <?php
 
-class TestDriverOxOutput extends TestDriverOxOutput_parent {
+class OxidTestDriverOxOutput extends OxidTestDriverOxOutput_parent {
 
     // new
     private $unitTestOutput = null;
@@ -23,7 +23,7 @@ class TestDriverOxOutput extends TestDriverOxOutput_parent {
 
     // overload
     public function output($sName, $output) {
-        TestDriver::getCurrentInstance()->registerOutput($sName, $output);
+        OxidTestDriver::getCurrentInstance()->registerOutput($sName, $output);
     }
 
 }

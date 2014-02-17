@@ -1,6 +1,6 @@
 <?php
 
-class TestDriver {
+class OxidTestDriver {
 
     private static $configured = false;
     private static $shopDirectory = null;
@@ -17,7 +17,7 @@ class TestDriver {
         if (class_exists('oxutilsobject', false)) {
             throw new Exception(
                 "Oxid's bootstrap.php allready loaded!\n" .
-                "Please call TestDriver::configure(<shopDirectory>) first."
+                "Please call OxidTestDriver::configure(<shopDirectory>) first."
             );
         }
 
@@ -80,7 +80,7 @@ class TestDriver {
         if (!self::$configured) {
             throw new Exception(
                 "No patches applied!\n" .
-                "Please call TestDriver::configure(<shopDirectory>) first."
+                "Please call OxidTestDriver::configure(<shopDirectory>) first."
             );
         }
         self::$currentInstance = $this;
@@ -111,7 +111,6 @@ class TestDriver {
         Oxid::run();
         $response = $this->createResponse();
         $this->reset();
-
 
         return $response;
     }

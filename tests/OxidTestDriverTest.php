@@ -1,17 +1,17 @@
 <?php
 
 
-require_once __DIR__ . '/../lib/TestDriver.php';
+require_once __DIR__ . '/../lib/OxidTestDriver.php';
 
 // needs to be called before oxid's bootstrap.php is loaded
-TestDriver::configure(__DIR__ . '/../../oxideshop_ce/source');
+OxidTestDriver::configure(__DIR__ . '/../../oxideshop_ce/source');
 
 
 
-class TestDriverTest extends PHPUnit_Framework_TestCase {
+class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
 
     public function testGetDetailsPage() {
-        $driver = new TestDriver;
+        $driver = new OxidTestDriver;
 
         $result = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
         $this->assertInstanceOf('details', $result->controller);
@@ -34,13 +34,13 @@ class TestDriverTest extends PHPUnit_Framework_TestCase {
 
     public function testResetState() {
         $this->assertFalse(isset($_GET['cl']));
-        $driver = new TestDriver;
+        $driver = new OxidTestDriver;
         $result = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
         $this->assertFalse(isset($_GET['cl']));
     }
 
     public function testLogin() {
-        $driver = new TestDriver;
+        $driver = new OxidTestDriver;
         $result = $driver->post('fnc=login_noredirect&cl=account&lgn_usr=admin&lgn_pwd=admin');
         $this->assertEquals('account', $result->controller->getClassName());
         $this->assertNotEmpty($result->sessionId, 'Session ID is empty!');
