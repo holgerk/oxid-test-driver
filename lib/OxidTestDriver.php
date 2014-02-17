@@ -14,6 +14,12 @@ class OxidTestDriver {
         self::$configured = true;
         self::$shopDirectory = $shopDirectory;
 
+        if (!file_exists(self::$shopDirectory . '/bootstrap.php')) {
+            throw new Exception(
+                "No bootstrap.php found!\n" .
+                "Please check shopDirectory: $shopDirectory!"
+            );
+        }
         if (class_exists('oxutilsobject', false)) {
             throw new Exception(
                 "Oxid's bootstrap.php allready loaded!\n" .
@@ -38,6 +44,9 @@ class OxidTestDriver {
             'oxsupercfg'    => array(
                 'search'  => 'class oxSuperCfg',
                 'replace' => 'class oxSuperCfg_Original'),
+            'oxview'        => array(
+                'search'  => 'class oxView',
+                'replace' => 'class oxView_Original'),
         );
 
         if (isset($replacements[$class])) {
@@ -75,6 +84,7 @@ class OxidTestDriver {
 
     private $output = '';
     private $cookies = array();
+    private $redirect = null;
 
     public function __construct() {
         if (!self::$configured) {
@@ -95,14 +105,17 @@ class OxidTestDriver {
     }
 
     public function request($method, $params) {
+        $this->reset();
 
         $method = strtoupper($method);
 
         if (is_string($params)) {
             parse_str($params, $result);
             $GLOBALS["_$method"] = $result;
-        } else {
+        } else if (is_array($params)) {
             $GLOBALS["_$method"] = $params;
+        } else {
+            throw new Exception("Wrong request param type: " . gettype($params));
         }
         $this->populateRequestVars();
 
@@ -110,7 +123,6 @@ class OxidTestDriver {
 
         Oxid::run();
         $response = $this->createResponse();
-        $this->reset();
 
         return $response;
     }
@@ -128,21 +140,31 @@ class OxidTestDriver {
 
     private function createResponse() {
         $response = new StdClass;
-        $response->controller = oxRegistry::getConfig()->getActiveView();
-        $response->user       = $response->controller->getUser();
-        $response->titleTag   = $this->getTitleTag();
-        $response->html       = $this->output;
-        $response->sessionId  = (isset($this->cookies['sid'])) ? $this->cookies['sid'] : null;
+        $response->controller  = oxRegistry::getConfig()->getActiveView();
+        $response->user        = $response->controller->getUser();
+        $response->titleTag    = $this->getTitleTag();
+        $response->html        = $this->output;
+        $response->sessionId   = (isset($this->cookies['sid'])) ? $this->cookies['sid'] : null;
+        $response->redirect    = $this->redirect;
+        $response->basketItems = oxRegistry::getSession()->getBasket()->getContents();
+
         return $response;
     }
 
     private function reset() {
         $_GET = array();
+        $_POST = array();
+        $_SESSION = array();
+        $_COOKIE = array();
+        $_REQUEST = array();
+
         $this->output = '';
         $this->cookies = array();
+        $this->redirect = null;
 
         oxUtilsObject::getInstance()->unitTestReset();
         oxSuperCfg::unitTestReset();
+        oxView::unitTestReset();
 
         oxRegistry::unitTestReset();
         $oConfigFile = new oxConfigFile(self::$shopDirectory . "/config.inc.php");
@@ -172,8 +194,9 @@ class OxidTestDriver {
 
     // called from oxutils overload
     public function registerRedirect($url, $code) {
-        throw new Exception("Got unexpected redirect: $code $url");
-        // var_dump(func_get_args());
+        $this->redirect = new StdClass;
+        $this->redirect->url = $url;
+        $this->redirect->code = $code;
     }
 
     // called from oxutils overload

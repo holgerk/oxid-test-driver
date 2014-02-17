@@ -13,38 +13,60 @@ class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
     public function testGetDetailsPage() {
         $driver = new OxidTestDriver;
 
-        $result = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
-        $this->assertInstanceOf('details', $result->controller);
+        $response = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
+        $this->assertInstanceOf('details', $response->controller);
         $this->assertEquals(
             'dc5ffdf380e15674b56dd562a7cb6aec',
-            $result->controller->getProduct()->getId());
+            $response->controller->getProduct()->getId());
         $this->assertEquals(
             'OXID Surf- und Kiteshop | Kuyichi Ledergürtel JEVER | online kaufen',
-            trim($result->titleTag));
+            trim($response->titleTag));
 
-        $result = $driver->get('cl=details&anid=f4f73033cf5045525644042325355732');
-        $this->assertInstanceOf('details', $result->controller);
+        $response = $driver->get('cl=details&anid=f4f73033cf5045525644042325355732');
+        $this->assertInstanceOf('details', $response->controller);
         $this->assertEquals(
             'f4f73033cf5045525644042325355732',
-            $result->controller->getProduct()->getId());
+            $response->controller->getProduct()->getId());
         $this->assertEquals(
             'OXID Surf- und Kiteshop | Transportcontainer THE BARREL | online kaufen',
-            trim($result->titleTag));
-    }
-
-    public function testResetState() {
-        $this->assertFalse(isset($_GET['cl']));
-        $driver = new OxidTestDriver;
-        $result = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
-        $this->assertFalse(isset($_GET['cl']));
+            trim($response->titleTag));
     }
 
     public function testLogin() {
         $driver = new OxidTestDriver;
-        $result = $driver->post('fnc=login_noredirect&cl=account&lgn_usr=admin&lgn_pwd=admin');
-        $this->assertEquals('account', $result->controller->getClassName());
-        $this->assertNotEmpty($result->sessionId, 'Session ID is empty!');
-        $this->assertEquals('oxdefaultadmin', $result->user->getId());
+        $response = $driver->post('fnc=login_noredirect&cl=account&lgn_usr=admin&lgn_pwd=admin');
+        $this->assertEquals('account', $response->controller->getClassName());
+        $this->assertNotEmpty($response->sessionId, 'Session ID is empty!');
+        $this->assertEquals('oxdefaultadmin', $response->user->getId());
+    }
+
+    public function testAddToBasket() {
+        $driver = new OxidTestDriver;
+
+        // add to basket
+        $response = $driver->post(array(
+            'fnc'  => 'tobasket',
+            'aid'  => 'f4f73033cf5045525644042325355732',
+            'am'   => '1',
+        ));
+        $this->assertEquals('start', $response->controller->getClassName());
+        $this->assertNotEmpty($response->sessionId, 'Session ID is empty!');
+        $this->assertFalse($response->user);
+        $this->assertEquals(1, count($response->basketItems));
+        $this->assertNotNull($response->redirect);
+
+        // follow redirect
+        $response = $driver->get($response->redirect->url);
+        $this->assertEquals(1, count($response->basketItems));
+        // read html document
+        libxml_use_internal_errors(true);
+        $doc = new DOMDocument();
+        $doc->loadHTML($response->html);
+        $xpath = new DOMXPath($doc);
+        $this->assertEquals(
+            'Neuer Artikel wurde in den Warenkorb gelegt',
+            $xpath->query('//*[@id="newItemMsg"]')->item(0)->nodeValue
+        );
     }
 
 }

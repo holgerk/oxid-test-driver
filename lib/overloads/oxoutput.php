@@ -23,7 +23,14 @@ class OxidTestDriverOxOutput extends OxidTestDriverOxOutput_parent {
 
     // overload
     public function output($sName, $output) {
-        OxidTestDriver::getCurrentInstance()->registerOutput($sName, $output);
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+        if ($trace[3]['class'] == 'oxWidgetControl') {
+            // widget output, which is contained in shopcontrol output
+            parent::output($sName, $output);
+        } else {
+            // regular shop output
+            OxidTestDriver::getCurrentInstance()->registerOutput($sName, $output);
+        }
     }
 
 }
