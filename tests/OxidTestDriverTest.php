@@ -58,16 +58,38 @@ class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
         // follow redirect
         $response = $driver->get($response->redirect->url);
         $this->assertEquals(1, count($response->basketItems));
-        // read html document
-        libxml_use_internal_errors(true);
-        $doc = new DOMDocument();
-        $doc->loadHTML($response->html);
-        $xpath = new DOMXPath($doc);
         $this->assertEquals(
             'Neuer Artikel wurde in den Warenkorb gelegt',
-            $xpath->query('//*[@id="newItemMsg"]')->item(0)->nodeValue
+            $response->xpath('//*[@id="newItemMsg"]')->item(0)->nodeValue
         );
     }
+
+    public function testTiming() {
+        $driver = new OxidTestDriver;
+        $response = $driver->post(array(
+            'fnc'  => 'tobasket',
+            'aid'  => 'f4f73033cf5045525644042325355732',
+            'am'   => '1',
+        ));
+
+        $this->assertGreaterThan(0, $response->time);
+    }
+
+    public function testCookiesAreKept() {
+        $driver = new OxidTestDriver;
+
+        $response = $driver->post(array(
+            'fnc'  => 'tobasket',
+            'aid'  => 'f4f73033cf5045525644042325355732',
+            'am'   => '1',
+        ));
+
+        $this->assertEquals(1, count($response->basketItems));
+        $response = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
+        $this->assertEquals(1, count($response->basketItems));
+    }
+
+
 
 }
 

@@ -1,5 +1,8 @@
 <?php
 
+require_once __DIR__ . '/OxidTestDriverResponse.php';
+
+
 class OxidTestDriver {
 
     private static $configured = false;
@@ -85,6 +88,7 @@ class OxidTestDriver {
     private $output = '';
     private $cookies = array();
     private $redirect = null;
+    private $startTime = null;
 
     public function __construct() {
         if (!self::$configured) {
@@ -120,6 +124,7 @@ class OxidTestDriver {
         $this->populateRequestVars();
 
         $_SERVER['REQUEST_METHOD'] = $method;
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'de,en-US;q=0.8,en;q=0.6';
 
         Oxid::run();
         $response = $this->createResponse();
@@ -139,7 +144,7 @@ class OxidTestDriver {
     // ========================================================================
 
     private function createResponse() {
-        $response = new StdClass;
+        $response = new OxidTestDriverResponse;
         $response->controller  = oxRegistry::getConfig()->getActiveView();
         $response->user        = $response->controller->getUser();
         $response->titleTag    = $this->getTitleTag();
@@ -147,6 +152,7 @@ class OxidTestDriver {
         $response->sessionId   = (isset($this->cookies['sid'])) ? $this->cookies['sid'] : null;
         $response->redirect    = $this->redirect;
         $response->basketItems = oxRegistry::getSession()->getBasket()->getContents();
+        $response->time        = microtime(true) - $this->startTime;
 
         return $response;
     }
@@ -155,12 +161,13 @@ class OxidTestDriver {
         $_GET = array();
         $_POST = array();
         $_SESSION = array();
-        $_COOKIE = array();
+        $_COOKIE = $this->cookies;
         $_REQUEST = array();
 
         $this->output = '';
         $this->cookies = array();
         $this->redirect = null;
+        $this->startTime = microtime(true);
 
         oxUtilsObject::getInstance()->unitTestReset();
         oxSuperCfg::unitTestReset();
