@@ -3,6 +3,12 @@
 require_once __DIR__ . '/OxidTestDriverResponse.php';
 
 
+// needs to be defined before bootstrap, so we can return true for seo urls
+function isSearchEngineUrl() {
+    return OxidTestDriver::getCurrentInstance()->isSearchEngineUrl();
+}
+
+
 class OxidTestDriver {
 
     private static $configured = false;
@@ -104,18 +110,34 @@ class OxidTestDriver {
         return $this->request('GET', $params);
     }
 
-    public function post($params) {
-        return $this->request('POST', $params);
+    public function post($params, $data = null) {
+        return $this->request('POST', $params, $data);
     }
 
-    public function request($method, $params) {
+    public function request($method, $params, $postData = null) {
         $this->reset();
 
         $method = strtoupper($method);
 
         if (is_string($params)) {
-            parse_str($params, $result);
-            $GLOBALS["_$method"] = $result;
+            if (substr($params, 0, 1) == '/') {
+                $this->isSearchEngineUrl = true;
+                $_SERVER['REQUEST_URI'] = $params;
+                $_SERVER['SCRIPT_NAME'] = '/oxseo.php';
+                $params = parse_url($params, PHP_URL_QUERY);
+                parse_str($params, $result);
+                $_GET = $result;
+                if (isset($postData)) {
+                    $_POST = $postData;
+                }
+            } else {
+                if (isset($postData)) {
+                    $_POST = $postData;
+                } else {
+                    parse_str($params, $result);
+                    $GLOBALS["_$method"] = $result;
+                }
+            }
         } else if (is_array($params)) {
             $GLOBALS["_$method"] = $params;
         } else {
@@ -163,11 +185,13 @@ class OxidTestDriver {
         $_SESSION = array();
         $_COOKIE = $this->cookies;
         $_REQUEST = array();
+        $_SERVER = array();
 
         $this->output = '';
         $this->cookies = array();
         $this->redirect = null;
         $this->startTime = microtime(true);
+        $this->isSearchEngineUrl = false;
 
         oxUtilsObject::getInstance()->unitTestReset();
         oxSuperCfg::unitTestReset();
@@ -189,6 +213,10 @@ class OxidTestDriver {
 
 
     // ========================================================================
+
+    public function isSearchEngineUrl() {
+        return $this->isSearchEngineUrl;
+    }
 
     // called from oxoutput overload
     public function registerOutput($name, $data) {

@@ -1,5 +1,11 @@
 <?php
 
+// to run these test you need to install a ce shop with demo data at:
+//   __DIR__ . '/../../oxideshop_ce/source'
+// with an admin user:
+//   admin
+// and password:
+//   admin
 
 require_once __DIR__ . '/../lib/OxidTestDriver.php';
 
@@ -87,6 +93,34 @@ class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(1, count($response->basketItems));
         $response = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
         $this->assertEquals(1, count($response->basketItems));
+    }
+
+    public function testSeoUrl() {
+        $driver = new OxidTestDriver;
+        $response = $driver->get('/Angebote/Transportcontainer-THE-BARREL.html?param=42');
+        $this->assertInstanceOf('details', $response->controller);
+        $this->assertEquals(
+            'f4f73033cf5045525644042325355732',
+            $response->controller->getProduct()->getId());
+        $this->assertRegexp('/Transportcontainer THE BARREL/', $response->titleTag);
+        $this->assertEquals('42', $_GET['param']);
+        //
+    }
+
+    public function testSeoUrlAndPost() {
+        $driver = new OxidTestDriver;
+        $response = $driver->post(
+            '/Angebote/Transportcontainer-THE-BARREL.html?param=42',
+            array(
+                'fnc'     => 'login_noredirect',
+                'lgn_usr' => 'admin',
+                'lgn_pwd' => 'admin',
+            )
+        );
+        $this->assertInstanceOf('details', $response->controller);
+        $this->assertEquals('42', $_GET['param']);
+        $this->assertEquals('admin', $_POST['lgn_usr']);
+        $this->assertEquals('oxdefaultadmin', $response->user->getId());
     }
 
 
