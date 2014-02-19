@@ -7,7 +7,7 @@ Features
 --------
 
 * Simulation of multiple requests in one process
-* Resets state after each request
+* Resets state before each request
 * Easy Way to test controllers
 * Allows verification of expected output
 * Maintains cookies across serveral requests
