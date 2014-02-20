@@ -19,10 +19,13 @@ Features
 How this works
 --------------
 
-There is some black magic involved, because an autoloader is used to replace some classes with new ones. You can See all replacements in the replacements directory. This has to be done, because otherwise it is not possible to reset...
+There is some black magic involved, because an autoloader is used to replace some classes with new ones. You can See all replacements in the replacements directory. This has to be done, because otherwise it is not possible to reset the application state. The replacements classes extend the original ones and overload only as few as possible methods. 
+
+Also there are classes which are overloads in a more classical manner. These are defined in the overloads Folder and follow the same pribciple, but in a more lightweight fassio, like classical module overloads. 
 
 TODO
 ----
 
 * Allow easy access to view data
 * QuickStart Guide
+* Easy mocking for framework instances(stuff created with oxNew)
