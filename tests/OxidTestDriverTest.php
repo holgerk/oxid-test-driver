@@ -19,7 +19,7 @@ class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
     public function testGetDetailsPage() {
         $driver = new OxidTestDriver;
 
-        $response = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
+        $response = $driver->get('/?cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
         $this->assertInstanceOf('details', $response->controller);
         $this->assertEquals(
             'dc5ffdf380e15674b56dd562a7cb6aec',
@@ -28,7 +28,7 @@ class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
             'OXID Surf- und Kiteshop | Kuyichi Ledergürtel JEVER | online kaufen',
             trim($response->titleTag));
 
-        $response = $driver->get('cl=details&anid=f4f73033cf5045525644042325355732');
+        $response = $driver->get('/?cl=details&anid=f4f73033cf5045525644042325355732');
         $this->assertInstanceOf('details', $response->controller);
         $this->assertEquals(
             'f4f73033cf5045525644042325355732',
@@ -40,7 +40,7 @@ class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
 
     public function testLogin() {
         $driver = new OxidTestDriver;
-        $response = $driver->post('fnc=login_noredirect&cl=account&lgn_usr=admin&lgn_pwd=admin');
+        $response = $driver->post('/', 'fnc=login_noredirect&cl=account&lgn_usr=admin&lgn_pwd=admin');
         $this->assertEquals('account', $response->controller->getClassName());
         $this->assertNotEmpty($response->sessionId, 'Session ID is empty!');
         $this->assertEquals('oxdefaultadmin', $response->user->getId());
@@ -91,7 +91,7 @@ class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
         ));
 
         $this->assertEquals(1, count($response->basketItems));
-        $response = $driver->get('cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
+        $response = $driver->get('/?cl=details&anid=dc5ffdf380e15674b56dd562a7cb6aec');
         $this->assertEquals(1, count($response->basketItems));
     }
 

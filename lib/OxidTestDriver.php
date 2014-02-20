@@ -106,43 +106,52 @@ class OxidTestDriver {
         self::$currentInstance = $this;
     }
 
-    public function get($params) {
-        return $this->request('GET', $params);
+    public function get($url, $params = array()) {
+        return $this->request('GET', $url, $params);
     }
 
-    public function post($params, $data = null) {
-        return $this->request('POST', $params, $data);
+    public function post($url, $params = array()) {
+        return $this->request('POST', $url, $params);
     }
 
-    public function request($method, $params, $postData = null) {
+    public function request($method, $url, $params = array()) {
         $this->reset();
 
         $method = strtoupper($method);
 
         if (is_string($params)) {
-            if (substr($params, 0, 1) == '/') {
-                $this->isSearchEngineUrl = true;
-                $_SERVER['REQUEST_URI'] = $params;
-                $_SERVER['SCRIPT_NAME'] = '/oxseo.php';
-                $params = parse_url($params, PHP_URL_QUERY);
-                parse_str($params, $result);
-                $_GET = $result;
-                if (isset($postData)) {
-                    $_POST = $postData;
-                }
-            } else {
-                if (isset($postData)) {
-                    $_POST = $postData;
-                } else {
-                    parse_str($params, $result);
-                    $GLOBALS["_$method"] = $result;
-                }
-            }
-        } else if (is_array($params)) {
-            $GLOBALS["_$method"] = $params;
-        } else {
-            throw new Exception("Wrong request param type: " . gettype($params));
+            parse_str($params, $params);
         }
+
+        if (is_array($url)) {
+            $params = $url;
+            $url = '/index.php';
+        }
+
+        $urlParts = parse_url($url);
+
+        if (isset($urlParts['query'])) {
+            parse_str($urlParts['query'], $queryParams);
+            foreach ($queryParams as $key => $value) {
+                $_GET[$key] = $value;
+            }
+        }
+
+        foreach ($params as $key => $value) {
+            $GLOBALS["_$method"][$key] = $value;
+        }
+
+        $isSeoUrl =
+            isset($urlParts['path']) &&
+            substr($urlParts['path'], 0, 10) != '/index.php' &&
+            substr($urlParts['path'], 0, 2) != '/?' &&
+            $urlParts['path'] != '/';
+        if ($isSeoUrl) {
+            $this->isSearchEngineUrl = true;
+            $_SERVER['REQUEST_URI'] = $urlParts['path'];
+            $_SERVER['SCRIPT_NAME'] = '/oxseo.php';
+        }
+
         $this->populateRequestVars();
 
         $_SERVER['REQUEST_METHOD'] = $method;
@@ -188,7 +197,7 @@ class OxidTestDriver {
         $_SERVER = array();
 
         $this->output = '';
-        $this->cookies = array();
+        // $this->cookies = array(); // no reset because they should persist
         $this->redirect = null;
         $this->startTime = microtime(true);
         $this->isSearchEngineUrl = false;
