@@ -27,6 +27,7 @@ Features
 * Low level access to response text and headers
 * Easy extendable with higher level abstraction
 * Easy mocking for framework instances(stuff created with oxNew)
+* Easy config change for tests
 
 How this works
 --------------
@@ -40,4 +41,3 @@ TODO
 
 * Allow easy access to view data
 * QuickStart Guide
-* Easy config change for tests

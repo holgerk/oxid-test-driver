@@ -143,6 +143,26 @@ class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
         $mail->send();
     }
 
+    public function testConfigChange() {
+        $driver = new OxidTestDriver;
+        $driver->setConfigParam('sShopUrl', 'http://wiebit.de');
+
+        // reset shop
+        $driver->reset();
+
+        // config changes should survive reset for current driver instance
+        $this->assertEquals(
+            'http://wiebit.de',
+            oxRegistry::getConfig()->getConfigParam('sShopUrl'));
+
+        // a new driver instance should reset config overloads
+        new OxidTestDriver;
+        $this->assertNotEquals(
+            'http://wiebit.de',
+            oxRegistry::getConfig()->getConfigParam('sShopUrl'));
+
+    }
+
 
 
 }

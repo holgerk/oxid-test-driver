@@ -78,6 +78,7 @@ class OxidTestDriver {
         oxUtilsObject::unitTestAddOverload('oxoutput');
         oxUtilsObject::unitTestAddOverload('oxutils');
         oxUtilsObject::unitTestAddOverload('oxutilsserver');
+        oxUtilsObject::unitTestAddOverload('oxconfig');
     }
 
     public static function getLoadedClasses() {
@@ -96,6 +97,7 @@ class OxidTestDriver {
     private $mocksByClass = array();
     private $redirect = null;
     private $startTime = null;
+    private $overloadedConfigValues = array();
 
     public function __construct() {
         if (!self::$configured) {
@@ -221,6 +223,9 @@ class OxidTestDriver {
         return $mock;
     }
 
+    public function setConfigParam($name, $value) {
+        $this->overloadedConfigValues[$name] = $value;
+    }
 
     // ========================================================================
 
@@ -289,7 +294,15 @@ class OxidTestDriver {
         return null;
     }
 
+    // called from oxconfig overload
+    public function hasOverloadedConfigParam($name) {
+        return array_key_exists($name, $this->overloadedConfigValues);
+    }
 
+    // called from oxconfig overload
+    public function getOverloadedConfigParam($name) {
+        return $this->overloadedConfigValues[$name];
+    }
 
 }
 
