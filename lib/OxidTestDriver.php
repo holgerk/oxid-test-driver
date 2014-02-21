@@ -251,7 +251,6 @@ class OxidTestDriver {
     public function registerSetOxCookie($args) {
         list($name, $value) = $args;
         $this->cookies[$name] = $value;
-        // debug('cookie: ' . $args[0] . ' = ' . $args[1]);
     }
 
 
