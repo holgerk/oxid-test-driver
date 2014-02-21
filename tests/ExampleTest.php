@@ -12,6 +12,12 @@ class ExampleTest extends PHPUnit_Framework_TestCase {
     public function testCheckout() {
         $driver = new OxidTestDriver;
 
+        // expect 2 mails (shop owner and customer)
+        $driver->reset(); // reset ensures that there is no cached mail instance
+        $mail = $driver->getMock($this, 'oxEmail');
+        $mail->expects($this->once())->method('sendOrderEmailToOwner');
+        $mail->expects($this->once())->method('sendOrderEmailToUser');
+
         // add article to basket
         $response = $driver->post(array(
             'fnc' => 'tobasket',

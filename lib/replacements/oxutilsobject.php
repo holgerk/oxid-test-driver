@@ -43,4 +43,14 @@ class oxUtilsObject extends oxUtilsObject_Original {
         return $overloadedClassName;
     }
 
+    // overload
+    public function oxNew($class) {
+        $mock = OxidTestDriver::getCurrentInstance()->findRegisteredMock($class);
+        if ($mock) {
+            return $mock;
+        }
+        $result = call_user_func_array('parent::oxNew', func_get_args());
+        return $result;
+    }
+
 }

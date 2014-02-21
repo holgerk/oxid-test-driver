@@ -123,6 +123,26 @@ class OxidTestDriverTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals('oxdefaultadmin', $response->user->getId());
     }
 
+    public function testMocking() {
+        $driver = new OxidTestDriver;
+
+        // reset shop state, otherwise it could be that an instance is allready cached somewhere
+        $driver->reset();
+
+        $mail = $driver->getMock($this, 'oxEmail');
+        $this->assertInstanceOf('oxEmail', $mail);
+
+        // from now on for the current (last instantiated) driver instance oxEmail
+        // is mocked, so the factory should allways return this mock
+        $this->assertTrue($mail === oxNew('oxEmail'));
+
+        // and once again, it behaves like a singleton factory
+        $this->assertTrue($mail === oxNew('oxemail'));
+
+        $mail->expects($this->once())->method('send');
+        $mail->send();
+    }
+
 
 
 }

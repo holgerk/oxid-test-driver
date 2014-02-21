@@ -93,6 +93,7 @@ class OxidTestDriver {
 
     private $output = '';
     private $cookies = array();
+    private $mocksByClass = array();
     private $redirect = null;
     private $startTime = null;
 
@@ -171,6 +172,55 @@ class OxidTestDriver {
         return $matches[1];
     }
 
+    /**
+     * Resets shop state
+     */
+    public function reset() {
+        $_GET = array();
+        $_POST = array();
+        $_SESSION = array();
+        $_COOKIE = $this->cookies;
+        $_REQUEST = array();
+        $_SERVER = array();
+
+        $this->output = '';
+        // $this->cookies = array(); // no reset because they should persist
+        // $this->mocksByClass = array(); // no reset because mocks should survive requests
+        $this->redirect = null;
+        $this->startTime = microtime(true);
+        $this->isSearchEngineUrl = false;
+
+        oxUtilsObject::getInstance()->unitTestReset();
+        oxSuperCfg::unitTestReset();
+        oxView::unitTestReset();
+
+        oxRegistry::unitTestReset();
+        $oConfigFile = new oxConfigFile(self::$shopDirectory . "/config.inc.php");
+        oxRegistry::set("oxConfigFile", $oConfigFile);
+    }
+
+    /**
+     * Returns a mockbuilder instance for a class created with oxnew
+     *
+     * This mock is than used as long this driver is the current one, to reset one needs to create
+     * a new driver instance
+     *
+     * PHPUnit speficific
+     */
+    public function getMock($phpUnitTestCase, $class) {
+        $class = strtolower($class);
+        $oxidObjectFactory = oxUtilsObject::getInstance();
+
+        $overloadedClass = $oxidObjectFactory->getClassName($class);
+        $builder = $phpUnitTestCase->getMockBuilder($overloadedClass);
+        $builder->disableOriginalConstructor();
+
+        $mock = $builder->getMock();
+        $this->mocksByClass[$class] = $mock;
+
+        return $mock;
+    }
+
 
     // ========================================================================
 
@@ -186,29 +236,6 @@ class OxidTestDriver {
         $response->time        = microtime(true) - $this->startTime;
 
         return $response;
-    }
-
-    private function reset() {
-        $_GET = array();
-        $_POST = array();
-        $_SESSION = array();
-        $_COOKIE = $this->cookies;
-        $_REQUEST = array();
-        $_SERVER = array();
-
-        $this->output = '';
-        // $this->cookies = array(); // no reset because they should persist
-        $this->redirect = null;
-        $this->startTime = microtime(true);
-        $this->isSearchEngineUrl = false;
-
-        oxUtilsObject::getInstance()->unitTestReset();
-        oxSuperCfg::unitTestReset();
-        oxView::unitTestReset();
-
-        oxRegistry::unitTestReset();
-        $oConfigFile = new oxConfigFile(self::$shopDirectory . "/config.inc.php");
-        oxRegistry::set("oxConfigFile", $oConfigFile);
     }
 
     private function populateRequestVars() {
@@ -251,6 +278,15 @@ class OxidTestDriver {
     public function registerSetOxCookie($args) {
         list($name, $value) = $args;
         $this->cookies[$name] = $value;
+    }
+
+    // called from oxutilsobject overload
+    public function findRegisteredMock($class) {
+        $class = strtolower($class);
+        if (isset($this->mocksByClass[$class])) {
+            return $this->mocksByClass[$class];
+        }
+        return null;
     }
 
 

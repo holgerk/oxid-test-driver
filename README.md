@@ -26,6 +26,7 @@ Features
 * Allows using SEO-Urls
 * Low level access to response text and headers
 * Easy extendable with higher level abstraction
+* Easy mocking for framework instances(stuff created with oxNew)
 
 How this works
 --------------
@@ -39,5 +40,4 @@ TODO
 
 * Allow easy access to view data
 * QuickStart Guide
-* Easy mocking for framework instances(stuff created with oxNew)
 * Easy config change for tests
